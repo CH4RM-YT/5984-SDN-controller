@@ -15,6 +15,8 @@ class SimpleSDNController(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super(SimpleSDNController, self).__init__(*args, **kwargs)
         self.mac_to_port = {}  # Stores MAC-to-port mappings
+        self.port_packet_count = {}  # Initialize port packet count dictionary
+        self.host_packet_count = {}  # Initialize host packet count dictionary
     
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
@@ -53,7 +55,7 @@ class SimpleSDNController(app_manager.RyuApp):
         pkt = packet.Packet(msg.data)
         eth = pkt.get_protocol(ethernet.ethernet)
 
-         # Update port packet count in a nested dictionary for each switch
+        # Update port packet count in a nested dictionary for each switch
         dpid = datapath.id
         if dpid not in self.port_packet_count:
             self.port_packet_count[dpid] = {}
@@ -75,12 +77,11 @@ class SimpleSDNController(app_manager.RyuApp):
         if eth.ethertype != ether_types.ETH_TYPE_IP:
             return
 
-        # parse the packet and extract the IPv4 protocol layer
+        # Parse the packet and extract the IPv4 protocol layer
         ip_pkt = pkt.get_protocol(ipv4.ipv4)
         if not ip_pkt:
             return
         
-
         source_ip = ip_pkt.src
         destination_ip = ip_pkt.dst
 
